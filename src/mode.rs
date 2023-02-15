@@ -8,7 +8,7 @@ pub enum Mode {
 }
 
 impl Mode {
-    pub fn get_buf(m: Mode, len: usize) -> Vec<Color> {
+    pub fn get_buf(m: Mode, len: usize) -> Vec<Vec<Color>> {
         match m {
             Mode::Rainbow => rainbow_vec(len),
             Mode::Blink => blink_vec(len),
@@ -16,12 +16,18 @@ impl Mode {
     }
 }
 
-pub fn rainbow_vec(len: usize) -> Vec<Color> {
+pub fn rainbow_vec(len: usize) -> Vec<Vec<Color>> {
     let mut buf = Vec::new();
     for i in 0..len {
         buf.push(rainbow(i as f32 / len as f32));
     }
-    buf
+    let mut result = Vec::new();
+    for _ in 0..len {
+        result.push(buf.clone());
+        let first = buf.remove(0);
+        buf.push(first);
+    }
+    result
 }
 
 pub fn rainbow(ratio: f32) -> Color {
@@ -41,10 +47,13 @@ pub fn rainbow(ratio: f32) -> Color {
     }
 }
 
-pub fn blink_vec(len: usize) -> Vec<Color> {
-    let mut buf = Vec::new();
-    for i in 0..len {
-        buf.push(Color(255, 0, 0));
+pub fn blink_vec(len: usize) -> Vec<Vec<Color>> {
+    let mut result = Vec::new();
+    for i in 0..12 {
+        result.push(vec![Color(255 - i * 20, 0, 0); len]);
     }
-    buf
+    for i in (0..12).rev() {
+        result.push(vec![Color(255 - i * 20, 0, 0); len]);
+    }
+    result
 }
