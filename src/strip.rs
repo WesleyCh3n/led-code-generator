@@ -6,8 +6,6 @@ pub struct Strip {
     pub mode: Arc<Mutex<Mode>>,
     pub len: Arc<Mutex<usize>>,
     pub buf: Arc<Mutex<Vec<Color>>>,
-    // pub buf: Arc<Mutex<Vec<Color>>>,
-    // pub rx: std::sync::mpsc::Receiver<Vec<Color>>,
     pub speed: Arc<Mutex<usize>>,
     pub radius: f32, // ui config
 }
