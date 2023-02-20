@@ -1,4 +1,6 @@
-#[derive(Clone, Copy)]
+use std::os::raw::c_uchar;
+
+#[derive(Clone, Copy, Debug)]
 pub struct Color(pub u8, pub u8, pub u8);
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -10,10 +12,33 @@ pub enum Mode {
 impl Mode {
     pub fn get_buf(m: Mode, len: usize) -> Vec<Vec<Color>> {
         match m {
-            Mode::Rainbow => rainbow_vec(len),
+            // Mode::Rainbow => rainbow_vec(len),
+            Mode::Rainbow => rainbow_buf_call(len),
             Mode::Blink => blink_vec(len),
         }
     }
+}
+
+extern "C" {
+    fn rainbow_buf(len: c_uchar, offset: c_uchar) -> *const c_uchar;
+    fn deallocate_buf(buf: *const c_uchar);
+}
+
+fn rainbow_buf_call(len: usize) -> Vec<Vec<Color>> {
+    let mut result = Vec::new();
+    unsafe {
+        for offset in 0..len {
+            let ptr = rainbow_buf(len as u8, offset as u8);
+            let data: Vec<Color> = std::slice::from_raw_parts(ptr, len * 3)
+                .windows(3)
+                .map(|c| Color(c[0], c[1], c[2]))
+                .step_by(3)
+                .collect();
+            deallocate_buf(ptr);
+            result.push(data);
+        }
+    }
+    result
 }
 
 pub fn rainbow_vec(len: usize) -> Vec<Vec<Color>> {

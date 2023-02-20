@@ -7,3 +7,6 @@ edition = "2021"
 
 [dependencies]
 eframe = "0.21.0"
+
+[build-dependencies]
+cc = "1.0"

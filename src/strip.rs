@@ -39,7 +39,7 @@ impl Strip {
 
 impl Default for Strip {
     fn default() -> Self {
-        let len = Arc::new(Mutex::new(20));
+        let len = Arc::new(Mutex::new(10));
         let mode = Arc::new(Mutex::new(Mode::Rainbow));
         let buf = Arc::new(Mutex::new(Vec::new()));
         let speed = Arc::new(Mutex::new(100));
