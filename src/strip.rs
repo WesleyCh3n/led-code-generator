@@ -1,37 +1,29 @@
 use std::sync::{Arc, Mutex};
 
-use crate::mode::{Color, Mode};
+use crate::mode::{Color, Mode, ModeConfig};
 
 pub struct Strip {
-    pub mode: Arc<Mutex<Mode>>,
-    pub len: Arc<Mutex<usize>>,
-    pub buf: Arc<Mutex<Vec<Color>>>,
-    pub speed: Arc<Mutex<usize>>,
-    pub radius: f32, // ui config
+    pub buf: Arc<Mutex<Vec<Color>>>, // in write, out read
+    pub mode_cfg: Arc<Mutex<ModeConfig>>, // in read, out write
+    pub radius: f32,                 // ui config
 }
 
 impl Strip {
     pub fn start(
-        mode: Arc<Mutex<Mode>>,
-        len: Arc<Mutex<usize>>,
         buf: Arc<Mutex<Vec<Color>>>,
-        speed: Arc<Mutex<usize>>,
+        mode_cfg: Arc<Mutex<ModeConfig>>,
     ) {
-        let mut prev_mode = *mode.lock().unwrap();
-        let mut prev_len = *len.lock().unwrap();
-        let mut cycle = Mode::get_buf(prev_mode, prev_len).into_iter().cycle();
+        let mut prev_mode_cfg = *mode_cfg.lock().unwrap();
+        let mut cycle = Mode::get_buf(prev_mode_cfg).into_iter().cycle();
         std::thread::spawn(move || loop {
             // if mode or len change, recreate buf
-            let curr_mode = *mode.lock().unwrap();
-            let curr_len = *len.lock().unwrap();
-            if curr_mode != prev_mode || curr_len != prev_len {
-                cycle = Mode::get_buf(curr_mode, curr_len).into_iter().cycle();
-                prev_mode = curr_mode;
-                prev_len = curr_len;
+            let curr_mode_cfg = *mode_cfg.lock().unwrap();
+            if curr_mode_cfg != prev_mode_cfg {
+                cycle = Mode::get_buf(curr_mode_cfg).into_iter().cycle();
+                prev_mode_cfg = curr_mode_cfg;
             }
 
-            let timeout = *speed.lock().unwrap() as u64;
-            std::thread::sleep(std::time::Duration::from_millis(timeout));
+            std::thread::sleep(std::time::Duration::from_millis(100));
             *buf.lock().unwrap() = cycle.next().unwrap();
         });
     }
@@ -39,17 +31,13 @@ impl Strip {
 
 impl Default for Strip {
     fn default() -> Self {
-        let len = Arc::new(Mutex::new(10));
-        let mode = Arc::new(Mutex::new(Mode::Rainbow));
         let buf = Arc::new(Mutex::new(Vec::new()));
-        let speed = Arc::new(Mutex::new(100));
+        let mode_cfg = Arc::new(Mutex::new(ModeConfig::default()));
 
-        Self::start(mode.clone(), len.clone(), buf.clone(), speed.clone());
+        Self::start(buf.clone(), mode_cfg.clone());
         Self {
-            mode,
-            len,
             buf,
-            speed,
+            mode_cfg,
             radius: 20.0,
         }
     }

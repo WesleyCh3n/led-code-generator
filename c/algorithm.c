@@ -4,6 +4,8 @@
 
 uint8_t *rainbow(float ratio);
 
+void deallocate_buf(uint8_t *buf) { free(buf); }
+
 uint8_t *rainbow_buf(uint8_t len, uint8_t offset) {
   uint8_t *buffer = malloc(len * 3);
   memset(buffer, 0, len * 3);
@@ -61,4 +63,24 @@ uint8_t *rainbow(float ratio) {
   return ptr;
 }
 
-void deallocate_buf(uint8_t *buf) { free(buf); }
+/*
+offset should iterate between [0..2*period]
+*/
+uint8_t *breath_buf(uint8_t len, uint8_t period, uint8_t offset, uint8_t *c1,
+                    uint8_t *c2) {
+  uint8_t *buffer = malloc(len * 3);
+  memset(buffer, 0, len * 3);
+
+  uint8_t *color = malloc(3);
+  offset = offset > period - 1 ? period - 1 - offset % period : offset;
+  float mix = (float)offset / period;
+  color[0] = c1[0] * (1 - mix) + c2[0] * mix;
+  color[1] = c1[1] * (1 - mix) + c2[1] * mix;
+  color[2] = c1[2] * (1 - mix) + c2[2] * mix;
+
+  for (int i = 0; i < len; i++) {
+    memcpy(buffer + (3 * i), color, 3);
+  }
+  free(color);
+  return buffer;
+}

@@ -1,26 +1,51 @@
 use std::os::raw::c_uchar;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Color(pub u8, pub u8, pub u8);
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Mode {
     Rainbow,
     Blink,
 }
 
 impl Mode {
-    pub fn get_buf(m: Mode, len: usize) -> Vec<Vec<Color>> {
-        match m {
-            // Mode::Rainbow => rainbow_vec(len),
-            Mode::Rainbow => rainbow_buf_call(len),
-            Mode::Blink => blink_vec(len),
+    pub fn get_buf(cfg: ModeConfig) -> Vec<Vec<Color>> {
+        match cfg.mode {
+            Mode::Rainbow => rainbow_buf_call(cfg.len),
+            Mode::Blink => breath_buf_call(cfg.len),
+        }
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Eq)]
+pub struct ModeConfig {
+    pub mode: Mode,
+    pub len: usize,
+    pub speed: usize,
+    color: Option<Color>,
+}
+
+impl Default for ModeConfig {
+    fn default() -> Self {
+        Self {
+            mode: Mode::Rainbow,
+            len: 15,
+            speed: 100,
+            color: None,
         }
     }
 }
 
 extern "C" {
     fn rainbow_buf(len: c_uchar, offset: c_uchar) -> *const c_uchar;
+    fn breath_buf(
+        len: c_uchar,
+        period: c_uchar,
+        offset: c_uchar,
+        c1: *const c_uchar,
+        c2: *const c_uchar,
+    ) -> *const c_uchar;
     fn deallocate_buf(buf: *const c_uchar);
 }
 
@@ -41,44 +66,23 @@ fn rainbow_buf_call(len: usize) -> Vec<Vec<Color>> {
     result
 }
 
-pub fn rainbow_vec(len: usize) -> Vec<Vec<Color>> {
-    let mut buf = Vec::new();
-    for i in 0..len {
-        buf.push(rainbow(i as f32 / len as f32));
-    }
+fn breath_buf_call(len: usize) -> Vec<Vec<Color>> {
     let mut result = Vec::new();
-    for _ in 0..len {
-        result.push(buf.clone());
-        let first = buf.remove(0);
-        buf.push(first);
-    }
-    result
-}
-
-pub fn rainbow(ratio: f32) -> Color {
-    let region = (ratio * 6.0) as i32;
-
-    let normalized: i32 = (ratio * 256.0 * 6.0).floor() as i32;
-    let x = (normalized % 256) as u8;
-
-    match region {
-        0 => Color(255, x, 0),
-        1 => Color(255 - x, 255, 0),
-        2 => Color(0, 255, x),
-        3 => Color(0, 255 - x, 255),
-        4 => Color(x, 0, 255),
-        5 => Color(255, 0, 255 - x),
-        _ => Color(0, 0, 0),
-    }
-}
-
-pub fn blink_vec(len: usize) -> Vec<Vec<Color>> {
-    let mut result = Vec::new();
-    for i in 0..12 {
-        result.push(vec![Color(255 - i * 20, 0, 0); len]);
-    }
-    for i in (0..12).rev() {
-        result.push(vec![Color(255 - i * 20, 0, 0); len]);
+    unsafe {
+        let period = 6;
+        for offset in 0..period * 2 {
+            let c1: [c_uchar; 3] = [255, 0, 0];
+            let c2: [c_uchar; 3] = [0, 255, 0];
+            let ptr =
+                breath_buf(len as u8, period, offset, c1.as_ptr(), c2.as_ptr());
+            let data: Vec<Color> = std::slice::from_raw_parts(ptr, len * 3)
+                .windows(3)
+                .map(|c| Color(c[0], c[1], c[2]))
+                .step_by(3)
+                .collect();
+            deallocate_buf(ptr);
+            result.push(data);
+        }
     }
     result
 }

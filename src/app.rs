@@ -8,6 +8,7 @@ use crate::strip::Strip;
 pub struct App {
     strips: Vec<Strip>,
     curr: Option<usize>,
+    show_code: bool,
 }
 
 impl App {
@@ -15,6 +16,7 @@ impl App {
         Self {
             strips: Vec::new(),
             curr: None,
+            show_code: false,
         }
     }
 }
@@ -82,7 +84,11 @@ impl eframe::App for App {
                             ui.label("LED Num");
                             ui.add(
                                 egui::DragValue::new(
-                                    &mut *self.strips[i].len.lock().unwrap(),
+                                    &mut self.strips[i]
+                                        .mode_cfg
+                                        .lock()
+                                        .unwrap()
+                                        .len,
                                 )
                                 .speed(1.0)
                                 .clamp_range(1.0..=100.0),
@@ -99,7 +105,11 @@ impl eframe::App for App {
                             ui.label("Speed");
                             ui.add(
                                 egui::DragValue::new(
-                                    &mut *self.strips[i].speed.lock().unwrap(),
+                                    &mut self.strips[i]
+                                        .mode_cfg
+                                        .lock()
+                                        .unwrap()
+                                        .speed,
                                 )
                                 .speed(1.0),
                             );
@@ -108,24 +118,30 @@ impl eframe::App for App {
                             egui::ComboBox::new("mode", "")
                                 .selected_text(format!(
                                     "{:?}",
-                                    self.strips[i].mode.lock().unwrap()
+                                    self.strips[i]
+                                        .mode_cfg
+                                        .lock()
+                                        .unwrap()
+                                        .mode
                                 ))
                                 .show_ui(ui, |ui| {
                                     ui.style_mut().wrap = Some(false);
                                     ui.set_min_width(60.0);
                                     ui.selectable_value(
-                                        &mut *self.strips[i]
-                                            .mode
+                                        &mut self.strips[i]
+                                            .mode_cfg
                                             .lock()
-                                            .unwrap(),
+                                            .unwrap()
+                                            .mode,
                                         Mode::Rainbow,
                                         "Rainbow",
                                     );
                                     ui.selectable_value(
-                                        &mut *self.strips[i]
-                                            .mode
+                                        &mut self.strips[i]
+                                            .mode_cfg
                                             .lock()
-                                            .unwrap(),
+                                            .unwrap()
+                                            .mode,
                                         Mode::Blink,
                                         "Blink",
                                     );
@@ -133,7 +149,9 @@ impl eframe::App for App {
                             ui.end_row();
                         });
                     ui.vertical_centered_justified(|ui| {
-                        ui.button("Export").clicked();
+                        if ui.button("Export").clicked() {
+                            self.show_code = !self.show_code;
+                        }
                     });
                 }
             });
@@ -169,5 +187,13 @@ impl eframe::App for App {
                 ui.ctx().request_repaint()
             }
         });
+        egui::Window::new("code")
+            .open(&mut self.show_code)
+            .default_size([800.0, 400.0])
+            .vscroll(false)
+            .hscroll(true)
+            .show(ctx, |ui| {
+                ui.label("example");
+            });
     }
 }
