@@ -2,13 +2,13 @@ use eframe::egui::plot::{MarkerShape, Plot, Points};
 use eframe::egui::ScrollArea;
 use eframe::{egui, epaint::Color32};
 
-use crate::mode::Mode;
 use crate::strip::Strip;
+use crate::ui::led_cfg::config_panel;
 
 pub struct App {
-    strips: Vec<Strip>,
-    curr: Option<usize>,
-    show_code: bool,
+    pub strips: Vec<Strip>,
+    pub curr: Option<usize>,
+    pub show_code: bool,
 }
 
 impl App {
@@ -75,84 +75,7 @@ impl eframe::App for App {
 
                 // read curr and show
                 if let Some(i) = self.curr {
-                    ui.heading(format!("Config: LED {i}"));
-                    egui::Grid::new("config")
-                        .num_columns(2)
-                        .spacing([40.0, 4.0])
-                        .striped(true)
-                        .show(ui, |ui| {
-                            ui.label("LED Num");
-                            ui.add(
-                                egui::DragValue::new(
-                                    &mut self.strips[i]
-                                        .mode_cfg
-                                        .lock()
-                                        .unwrap()
-                                        .len,
-                                )
-                                .speed(1.0)
-                                .clamp_range(1.0..=100.0),
-                            );
-                            ui.end_row();
-                            ui.label("Gap");
-                            ui.add(
-                                egui::DragValue::new(
-                                    &mut self.strips[i].radius,
-                                )
-                                .speed(1.0),
-                            );
-                            ui.end_row();
-                            ui.label("Speed");
-                            ui.add(
-                                egui::DragValue::new(
-                                    &mut self.strips[i]
-                                        .mode_cfg
-                                        .lock()
-                                        .unwrap()
-                                        .speed,
-                                )
-                                .speed(1.0),
-                            );
-                            ui.end_row();
-                            ui.label("Mode");
-                            egui::ComboBox::new("mode", "")
-                                .selected_text(format!(
-                                    "{:?}",
-                                    self.strips[i]
-                                        .mode_cfg
-                                        .lock()
-                                        .unwrap()
-                                        .mode
-                                ))
-                                .show_ui(ui, |ui| {
-                                    ui.style_mut().wrap = Some(false);
-                                    ui.set_min_width(60.0);
-                                    ui.selectable_value(
-                                        &mut self.strips[i]
-                                            .mode_cfg
-                                            .lock()
-                                            .unwrap()
-                                            .mode,
-                                        Mode::Rainbow,
-                                        "Rainbow",
-                                    );
-                                    ui.selectable_value(
-                                        &mut self.strips[i]
-                                            .mode_cfg
-                                            .lock()
-                                            .unwrap()
-                                            .mode,
-                                        Mode::Blink,
-                                        "Blink",
-                                    );
-                                });
-                            ui.end_row();
-                        });
-                    ui.vertical_centered_justified(|ui| {
-                        if ui.button("Export").clicked() {
-                            self.show_code = !self.show_code;
-                        }
-                    });
+                    config_panel(self, ui, i)
                 }
             });
         egui::CentralPanel::default().show(ctx, |ui| {

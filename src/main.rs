@@ -1,6 +1,7 @@
 mod app;
 mod mode;
 mod strip;
+mod ui;
 
 fn main() -> eframe::Result<()> {
     let options = eframe::NativeOptions {
