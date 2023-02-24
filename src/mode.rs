@@ -16,6 +16,17 @@ impl Mode {
             Mode::Blink => breath_buf_call(cfg.len),
         }
     }
+    pub fn get_code(&self) -> String {
+        let lines: Vec<String> = include_str!("../c/algorithm.c")
+            .lines()
+            .into_iter()
+            .map(|s| s.into())
+            .collect();
+        match *self {
+            Mode::Rainbow => lines[8..65].join("\n"),
+            Mode::Blink => lines[65..].join("\n"),
+        }
+    }
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]

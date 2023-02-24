@@ -9,6 +9,7 @@ pub struct App {
     pub strips: Vec<Strip>,
     pub curr: Option<usize>,
     pub show_code: bool,
+    pub code: String,
 }
 
 impl App {
@@ -17,6 +18,7 @@ impl App {
             strips: Vec::new(),
             curr: None,
             show_code: false,
+            code: String::new(),
         }
     }
 }
@@ -116,7 +118,18 @@ impl eframe::App for App {
             .vscroll(false)
             .hscroll(true)
             .show(ctx, |ui| {
-                ui.label("example");
+                egui::ScrollArea::vertical()
+                    .max_width(450.0)
+                    .show(ui, |ui| {
+                        ui.add(
+                            egui::TextEdit::multiline(&mut self.code)
+                                .font(egui::TextStyle::Monospace) // for cursor height
+                                .code_editor()
+                                .desired_rows(10)
+                                .lock_focus(true)
+                                .desired_width(f32::INFINITY),
+                        );
+                    });
             });
     }
 }

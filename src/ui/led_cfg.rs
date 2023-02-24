@@ -49,12 +49,12 @@ pub fn config_panel(app: &mut App, ui: &mut Ui, index: usize) {
                     ui.selectable_value(mode, Mode::Rainbow, "Rainbow");
                     ui.selectable_value(mode, Mode::Blink, "Blink");
                 });
+            app.code = mode.get_code();
             ui.end_row();
         });
 
+    ui.separator();
     ui.vertical_centered_justified(|ui| {
-        if ui.button("Export").clicked() {
-            app.show_code = !app.show_code;
-        }
+        ui.toggle_value(&mut app.show_code, "Show Code");
     });
 }
