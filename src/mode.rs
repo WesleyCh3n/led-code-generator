@@ -17,11 +17,8 @@ impl Mode {
         }
     }
     pub fn get_code(&self) -> String {
-        let lines: Vec<String> = include_str!("../c/algorithm.c")
-            .lines()
-            .into_iter()
-            .map(|s| s.into())
-            .collect();
+        let lines: Vec<&str> =
+            include_str!("../c/algorithm.c").lines().collect();
         match *self {
             Mode::Rainbow => lines[8..65].join("\n"),
             Mode::Blink => lines[65..].join("\n"),
@@ -65,11 +62,7 @@ fn rainbow_buf_call(len: usize) -> Vec<Vec<Color>> {
     unsafe {
         for offset in 0..len {
             let ptr = rainbow_buf(len as u8, offset as u8);
-            let data: Vec<Color> = std::slice::from_raw_parts(ptr, len * 3)
-                .windows(3)
-                .map(|c| Color(c[0], c[1], c[2]))
-                .step_by(3)
-                .collect();
+            let data = c_to_color(ptr, len * 3);
             deallocate_buf(ptr);
             result.push(data);
         }
@@ -86,14 +79,18 @@ fn breath_buf_call(len: usize) -> Vec<Vec<Color>> {
             let c2: [c_uchar; 3] = [0, 255, 0];
             let ptr =
                 breath_buf(len as u8, period, offset, c1.as_ptr(), c2.as_ptr());
-            let data: Vec<Color> = std::slice::from_raw_parts(ptr, len * 3)
-                .windows(3)
-                .map(|c| Color(c[0], c[1], c[2]))
-                .step_by(3)
-                .collect();
+            let data = c_to_color(ptr, len * 3);
             deallocate_buf(ptr);
             result.push(data);
         }
     }
     result
+}
+
+unsafe fn c_to_color(ptr: *const u8, len: usize) -> Vec<Color> {
+    std::slice::from_raw_parts(ptr, len)
+        .windows(3)
+        .map(|c| Color(c[0], c[1], c[2]))
+        .step_by(3)
+        .collect()
 }
